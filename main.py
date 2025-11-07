@@ -4,10 +4,15 @@ from fmiopendata.wfs import download_stored_query
 import pickle
 import json
 import pprint
+import streamlit as st
+import pandas as pd
+import altair as alt
+# import plotly.express as px
 
 do_save_json = False
 do_save_pretty_print = False
-do_print_all_observations = True
+do_print_all_observation_times = False
+do_print_observation_data_to_console = True
 
 def save_pickle_file(data, filename):
     with open(filename, "wb") as f:
@@ -49,9 +54,7 @@ def pretty_print_to_file(data, filename):
     with open(filename, "w", encoding="utf-8") as f:
         pprint.pprint(data, stream=f, width=120)
 
-
-def main():
-    print("Hello from weatherapp!")
+def get_data_from_file_or_download():
 
     # Check if there is a file named 'obs_full.pickle' in the current directory.
     # If so, load the data from there instead of downloading it again.
@@ -84,21 +87,23 @@ def main():
         
         # --- Save the returned object to files (three options) ---
 
-        # Save entire obs object with pickle (binary)
+        # Always save entire obs object with pickle (binary)
         save_pickle_file(obs, "obs_full.pickle")
         print("Saved full observation data to obs_full.pickle")
 
+        # Optionally save observation data as JSON
         if do_save_json:
             save_json_file(obs.data, "obs_data.json")
             print("Saved observation data to obs_data.json")
 
+        # Optionally save observation data as pretty-printed text
         if do_save_pretty_print:
             pretty_print_to_file(obs.data, "obs_data.txt")
             print("Saved observation data to obs_data.txt")
 
-    # MultiPoint.data  # The observation data
-    # MultiPoint.location_metadata  # Location information for the observation locations
+    return obs
 
+def print_observation_data_to_console(obs):
     weather_stations = list(sorted(obs.data.keys()))
     weather_stations_count = len(weather_stations)
 
@@ -117,17 +122,113 @@ def main():
             unit = obs.data[station][parametri]['unit']
             print(f"  {parametri:30} Observations {count_observations}, latest: {timesteps[-1]}  {obs.data[station][parametri]['values'][-1]} {unit}")
 
-            if do_print_all_observations:
+            if do_print_all_observation_times:
                 for idx, ts in enumerate(timesteps):
                     value = obs.data[station][parametri]['values'][idx]
                     # check that value is not None or NaN. 'is Not None' does not catch NaN values.
                     if value is not None and not (isinstance(value, float) and isnan(value)):
                         print(f"    {ts}, {value} {unit}")
-    
+        
     print("=" * 100)
     print(f"Total weather stations: {weather_stations_count}")
     return
+    
 
 
-if __name__ == "__main__":
-    main()
+print("Hello from weatherapp!")
+obs = get_data_from_file_or_download()
+
+if do_print_observation_data_to_console:
+    print_observation_data_to_console(obs)
+
+# obs = get_data_from_file_or_download()
+# # MultiPoint.data  # The observation data
+# # MultiPoint.location_metadata  # Location information for the observation locations
+
+# weather_stations = list(sorted(obs.data.keys()))
+# weather_stations_count = len(weather_stations)
+
+# for station in weather_stations:
+#     print("-"*100)
+#     location = obs.location_metadata[station]
+#     fmisd = location['fmisid']
+#     latitude = location['latitude']
+#     longitude = location['longitude']
+#     print(f"{station}, FMISID: {fmisd}, lat: {latitude}, lon: {longitude}")
+
+#     timesteps = obs.data[station]['times']
+#     count_observations = len(timesteps)
+
+#     for parametri in sorted(obs.data[station].keys())[:-1]:  # Exclude the 'times' key at the end
+#         unit = obs.data[station][parametri]['unit']
+#         print(f"  {parametri:30} Observations {count_observations}, latest: {timesteps[-1]}  {obs.data[station][parametri]['values'][-1]} {unit}")
+
+#         if do_print_all_observations:
+#             for idx, ts in enumerate(timesteps):
+#                 value = obs.data[station][parametri]['values'][idx]
+#                 # check that value is not None or NaN. 'is Not None' does not catch NaN values.
+#                 if value is not None and not (isinstance(value, float) and isnan(value)):
+#                     print(f"    {ts}, {value} {unit}")
+
+# print("=" * 100)
+# print(f"Total weather stations: {weather_stations_count}")
+# return
+
+st.set_page_config(layout="wide")
+st.title("Weather Observations")
+
+# DataFrame for storing the only latest observation datapoint of each weather station
+
+# Build a list of row dicts and construct the DataFrame once (avoid DataFrame.append)
+rows = []
+for station in obs.data.keys():
+    location = obs.location_metadata[station]
+    fmisid = location['fmisid']
+    latitude = location['latitude']
+    longitude = location['longitude']
+    for parametri in obs.data[station].keys():
+        if parametri == 'times':
+            continue
+        time_latest = obs.data[station]['times'][-1]  # Latest observation time in data as string
+        unit = obs.data[station][parametri]['unit']
+        value_latest = obs.data[station][parametri]['values'][-1]  # Latest observation value
+        rows.append({
+            "Station": station,
+            "FMISID": fmisid,
+            "Latitude": latitude,
+            "Longitude": longitude,
+            "Parameter": parametri,
+            "Time": time_latest,
+            "Value": value_latest,
+            "Unit": unit
+        })
+
+df = pd.DataFrame(rows, columns=["Station", "FMISID", "Latitude", "Longitude", "Parameter", "Time", "Value", "Unit"])
+# drop index  
+df.reset_index(drop=True, inplace=True)
+
+with st.expander("Show raw data"):
+    st.dataframe(df)
+
+with st.container(width='stretch'):
+    st.subheader("Latest Observations from Weather Stations")
+    # ask user to select parameter to show
+    parameter_options = df['Parameter'].unique().tolist()
+    selected_parameter = st.selectbox("Select Parameter", parameter_options)
+
+    # Filter the DataFrame based on the selected parameter
+    filtered_df = df[df['Parameter'] == selected_parameter]
+
+    # Show the DataFrame in the Streamlit app
+    st.write(filtered_df)
+
+# Create a line chart using Altair (use exact column names)
+chart = alt.Chart(df).mark_line().encode(
+    x='Time:T',
+    y='Value:Q',
+    color='Station:N',
+    tooltip=['Station:N', 'FMISID:N', 'Latitude:Q', 'Longitude:Q', 'Parameter:N', 'Value:Q', 'Unit:N', 'Time:T']
+).interactive()
+
+st.altair_chart(chart, width='content')
+
