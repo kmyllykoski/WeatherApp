@@ -8,7 +8,6 @@ import streamlit as st
 # from streamlit_dimensions import st_dimensions
 import pandas as pd
 import altair as alt
-import time
 # import plotly.express as px
 
 do_save_json = False
