@@ -5,14 +5,16 @@ import pickle
 import json
 import pprint
 import streamlit as st
+# from streamlit_dimensions import st_dimensions
 import pandas as pd
 import altair as alt
+import time
 # import plotly.express as px
 
 do_save_json = False
 do_save_pretty_print = False
 do_print_all_observation_times = False
-do_print_observation_data_to_console = True
+do_print_observation_data_to_console = False
 
 def save_pickle_file(data, filename):
     with open(filename, "wb") as f:
@@ -176,6 +178,7 @@ if do_print_observation_data_to_console:
 
 st.set_page_config(layout="wide")
 st.title("Weather Observations")
+width_main_area_px = 920
 
 # DataFrame for storing the only latest observation datapoint of each weather station
 
@@ -235,24 +238,68 @@ with st.container(width='stretch'):
     if df.empty:
         st.write("No data available for the selected parameter and stations.")
         st.stop()
-    # display filtered data as bar chart using Altair where x=Value, y=Station, show unit in x axis label, 
-    # do not display legend
-    chart = alt.Chart(df).mark_bar().encode(
+
+    # sort df by Value descending
+    df = df.sort_values(by='Value', ascending=False)
+
+
+##
+with st.container(width='stretch'):
+    # how much is the container width?
+    width_bars = int(width_main_area_px * 0.67)
+    width_labels = width_main_area_px - width_bars
+
+    sort_order = alt.EncodingSortField(field='Value:Q', op='max', order='descending')
+
+    # 2. Define the main bar chart (67% width)
+    bar_chart = alt.Chart(df).mark_bar().encode(
+        # X-axis for the bar values
         x=alt.X('Value:Q', title=f"{selected_parameter} ({df['Unit'].iloc[0]})"),
-        y=alt.Y('Station:N', title=None),
+        
+        # Y-axis MUST NOT show labels (axis=None) as the label chart handles this
+        y=alt.Y('Station:N', title=None, sort=sort_order, axis=None), 
+        
         color=alt.Color('Station:N', legend=None),
         tooltip=['Station:N', 'FMISID:N', 'Latitude:Q', 'Longitude:Q', 'Parameter:N', 'Value:Q', 'Unit:N', 'Time:T'],
+    ).properties(
+        # Set the width of the main bar area to stretch and fill remaining space
+        # (The effective width will be 100% of the container minus 180px for the labels)
+        width=width_bars
     )
-    st.altair_chart(chart, use_container_width=True)
 
+    # 3. Define the Label Chart (33% width)
+    label_chart = alt.Chart(df).mark_text(
+        align='left', 
+        baseline='middle',
+        color='white',
+        fontSize=12 # <-- FIXED: fontSize property moved here
+    ).encode(
+        # Y-axis for alignment, must use the same sort and must NOT show an axis
+        y=alt.Y('Station:N', title=None, sort=sort_order, axis=None), 
+        
+        # X-axis fixed position (value(5) places the text 5 pixels from the left edge)
+        x=alt.value(5), 
 
-# Create a line chart using Altair (use exact column names)
-# chart = alt.Chart(df).mark_line().encode(
-#     x='Time:T',
-#     y='Value:Q',
-#     color='Station:N',
-#     tooltip=['Station:N', 'FMISID:N', 'Latitude:Q', 'Longitude:Q', 'Parameter:N', 'Value:Q', 'Unit:N', 'Time:T']
-# ).interactive()
+        # The text itself is the Station name (no fontSize parameter here)
+        text=alt.Text('Station:N') 
+    ).properties(
+        # Fixed width in pixels for the label column. 180px usually provides enough space
+        # for long names, acting as the '33%' dedicated space.
+        width=width_labels
+    )
 
-# st.altair_chart(chart, width='content')
+    # 4. Concatenate the two charts using alt.hconcat() and resolve shared scales
+    final_chart = alt.hconcat(label_chart, bar_chart).resolve_scale(
+        y='shared' # Crucial: ensures the Y scales and positions are perfectly aligned
+    )
 
+    # Display the chart in Streamlit (assuming you are running this within a Streamlit app)
+    st.altair_chart(final_chart, width='stretch')
+    # If not running in Streamlit, use .show() for testing:
+    # final_chart.show()
+
+with st.container(width='stretch'):
+    st.subheader("Selected data")
+
+    # Show the DataFrame in the Streamlit app
+    st.write(df)
