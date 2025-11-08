@@ -316,6 +316,17 @@ with st.container(width='stretch'):
                     station_options_with_values.append(station)
             else:
                 station_options_with_values.append(station)
+    
+
+    st.markdown("""
+                <style>
+                    span[data-baseweb="tag"][role="button"]{
+                        color: black;
+                    }
+                </style>
+
+                """, unsafe_allow_html=True)
+
 
     selected_stations = st.multiselect("Select Stations to Plot", station_options_with_values, default=station_options_with_values[:5])
     # Filter the DataFrame based on the selected parameter and stations
@@ -349,7 +360,8 @@ with st.container(width='stretch'):
     ).properties(
         # Set the width of the main bar area to stretch and fill remaining space
         # (The effective width will be 100% of the container minus 180px for the labels)
-        width=width_bars
+        width=width_bars,
+        height=200 # match label chart height
     )
 
     # 3. Define the Label Chart (33% width)
@@ -357,7 +369,7 @@ with st.container(width='stretch'):
         align='left', 
         baseline='middle',
         color='white',
-        fontSize=12 # <-- FIXED: fontSize property moved here
+        fontSize=18 # <-- FIXED: fontSize property moved here
     ).encode(
         # Y-axis for alignment, must use the same sort and must NOT show an axis
         y=alt.Y('Station:N', title=None, sort=sort_order, axis=None), 
@@ -370,13 +382,15 @@ with st.container(width='stretch'):
     ).properties(
         # Fixed width in pixels for the label column. 180px usually provides enough space
         # for long names, acting as the '33%' dedicated space.
-        width=width_labels
+        width=width_labels, 
+        height=200 # match bar chart height
     )
 
     # 4. Concatenate the two charts using alt.hconcat() and resolve shared scales
     final_chart = alt.hconcat(label_chart, bar_chart).resolve_scale(
         y='shared' # Crucial: ensures the Y scales and positions are perfectly aligned
     )
+    
 
     # Display the chart in Streamlit (assuming you are running this within a Streamlit app)
     st.altair_chart(final_chart, width='stretch')
