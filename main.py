@@ -317,7 +317,7 @@ with st.container(width='stretch'):
             else:
                 station_options_with_values.append(station)
     
-
+    # https://stackoverflow.com/questions/73753323/custom-color-for-each-element-in-multiselect-streamlit
     st.markdown("""
                 <style>
                     span[data-baseweb="tag"][role="button"]{
