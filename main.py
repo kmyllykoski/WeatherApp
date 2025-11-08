@@ -222,13 +222,37 @@ with st.container(width='stretch'):
     # Show the DataFrame in the Streamlit app
     st.write(filtered_df)
 
-# Create a line chart using Altair (use exact column names)
-chart = alt.Chart(df).mark_line().encode(
-    x='Time:T',
-    y='Value:Q',
-    color='Station:N',
-    tooltip=['Station:N', 'FMISID:N', 'Latitude:Q', 'Longitude:Q', 'Parameter:N', 'Value:Q', 'Unit:N', 'Time:T']
-).interactive()
+with st.container(width='stretch'):
+    # user selects parameter to plot
+    st.subheader("Observation of selected Parameter on selected Stations")
+    parameter_options = df['Parameter'].unique().tolist()
+    selected_parameter = st.selectbox("Select Parameter to Plot", parameter_options, key='parameter_plot')
+    # select multiple stations
+    station_options = df['Station'].unique().tolist()
+    selected_stations = st.multiselect("Select Stations to Plot", station_options, default=station_options[:5])
+    # Filter the DataFrame based on the selected parameter and stations
+    df = df[(df['Parameter'] == selected_parameter) & (df['Station'].isin(selected_stations))]
+    if df.empty:
+        st.write("No data available for the selected parameter and stations.")
+        st.stop()
+    # display filtered data as bar chart using Altair where x=Value, y=Station, show unit in x axis label, 
+    # do not display legend
+    chart = alt.Chart(df).mark_bar().encode(
+        x=alt.X('Value:Q', title=f"{selected_parameter} ({df['Unit'].iloc[0]})"),
+        y=alt.Y('Station:N', title=None),
+        color=alt.Color('Station:N', legend=None),
+        tooltip=['Station:N', 'FMISID:N', 'Latitude:Q', 'Longitude:Q', 'Parameter:N', 'Value:Q', 'Unit:N', 'Time:T'],
+    )
+    st.altair_chart(chart, use_container_width=True)
 
-st.altair_chart(chart, width='content')
+
+# Create a line chart using Altair (use exact column names)
+# chart = alt.Chart(df).mark_line().encode(
+#     x='Time:T',
+#     y='Value:Q',
+#     color='Station:N',
+#     tooltip=['Station:N', 'FMISID:N', 'Latitude:Q', 'Longitude:Q', 'Parameter:N', 'Value:Q', 'Unit:N', 'Time:T']
+# ).interactive()
+
+# st.altair_chart(chart, width='content')
 
