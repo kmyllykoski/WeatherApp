@@ -10,6 +10,10 @@ import pandas as pd
 import altair as alt
 # import plotly.express as px
 
+# Using https://github.com/pnuu/fmiopendata to download observation data from Finnish Meteorological Institute (FMI)
+
+
+hours_to_download = 4 # how many hours of data to download
 do_save_json = False
 do_save_pretty_print = False
 do_print_all_observation_times = False
@@ -74,7 +78,7 @@ def get_data_from_file_or_download():
         print("obs_full.pickle not found, downloading data from Finnish Meteorological Institute (FMI)...")
 
         end_time = dt.datetime.now(dt.timezone.utc)
-        start_time = end_time - dt.timedelta(hours=24)
+        start_time = end_time - dt.timedelta(hours=hours_to_download)
 
         start_time = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_time = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -133,6 +137,17 @@ def print_observation_data_to_console(obs):
     print("=" * 100)
     print(f"Total weather stations: {weather_stations_count}")
     return
+
+# helper: return True only if series contains at least one numeric, finite value
+def _has_numeric_value(series):
+    def _is_numeric_and_finite(v):
+        try:
+            f = float(v)
+        except Exception:
+            return False
+        # import of isnan is at top; protects against non-float input
+        return not (isinstance(f, float) and isnan(f))
+    return series.apply(_is_numeric_and_finite).any()
     
 
 
@@ -177,6 +192,9 @@ if do_print_observation_data_to_console:
 
 st.set_page_config(layout="wide")
 st.title("Weather Observations")
+st.write("Observations from Finnish Meteorological Institute (FMI) weather stations \
+             in the last 24 hours retrieved using Python package https://github.com/pnuu/fmiopendata \
+             to handle request to FMI Open Data https://en.ilmatieteenlaitos.fi/open-data")
 width_main_area_px = 920
 
 # DataFrame for storing the only latest observation datapoint of each weather station
@@ -209,17 +227,39 @@ df = pd.DataFrame(rows, columns=["Station", "FMISID", "Latitude", "Longitude", "
 # drop index  
 df.reset_index(drop=True, inplace=True)
 
-with st.expander("Show raw data"):
-    st.dataframe(df)
+
 
 with st.container(width='stretch'):
-    st.subheader("Latest Observations from Weather Stations")
+    st.subheader(f"Observations during the last {hours_to_download} hours: {len(df)}")
+    st.subheader("Number of weather stations: " + str(df['Station'].nunique()))
+    # draw a horizontal line
+    st.markdown("---")
+    st.subheader("Latest observations for selected Parameter for all Stations")
     # ask user to select parameter to show
-    parameter_options = df['Parameter'].unique().tolist()
-    selected_parameter = st.selectbox("Select Parameter", parameter_options)
+    parameter_options = df['Parameter'].unique().tolist() 
+    parameter_options.sort() # sort options alphabetically
+    # if there is "Air Temperature" in the options, select it by default
+    if "Air Temperature" in parameter_options:
+        default_index = parameter_options.index("Air Temperature")
+    else:
+        default_index = 0
+    selected_parameter = st.selectbox("Select Parameter", parameter_options, index=default_index)
 
     # Filter the DataFrame based on the selected parameter
     filtered_df = df[df['Parameter'] == selected_parameter]
+
+    # ask user to select sorting order by station name or latitude
+    sort_order_options = ["Station Name", "Latitude"]
+    selected_sort_order = st.selectbox("Select Sort Order", sort_order_options)
+    if selected_sort_order == "Station Name":
+        filtered_df = filtered_df.sort_values(by='Station', ascending=True)
+    else:
+        filtered_df = filtered_df.sort_values(by='Latitude', ascending=True)
+
+    # with st.expander("Show all raw data"):
+    #     st.dataframe(df)
+
+
 
     # Show the DataFrame in the Streamlit app
     st.write(filtered_df)
@@ -228,10 +268,56 @@ with st.container(width='stretch'):
     # user selects parameter to plot
     st.subheader("Observation of selected Parameter on selected Stations")
     parameter_options = df['Parameter'].unique().tolist()
-    selected_parameter = st.selectbox("Select Parameter to Plot", parameter_options, key='parameter_plot')
+    parameter_options.sort() # sort options alphabetically
+    # if there is "Air Temperature" in the options, select it by default
+    if "Air Temperature" in parameter_options:
+        default_index = parameter_options.index("Air Temperature")
+    else:
+        default_index = 0
+    selected_parameter = st.selectbox("Select Parameter to Plot", parameter_options, index=default_index)  #  key='parameter_plot'
     # select multiple stations
     station_options = df['Station'].unique().tolist()
-    selected_stations = st.multiselect("Select Stations to Plot", station_options, default=station_options[:5])
+    
+    if "Porvoo Emäsalo" in station_options:
+        # move "Porvoo Emäsalo" to the top if it exists and has a real numeric value for the selected parameter
+        mask = (df['Station'] == "Porvoo Emäsalo") & (df['Parameter'] == selected_parameter)
+        if _has_numeric_value(df.loc[mask, 'Value']):
+            print("Porvoo Emäsalo has numeric value, moving to top of station options")
+            print(df.loc[mask])
+            station_options.remove("Porvoo Emäsalo")
+            station_options.insert(0, "Porvoo Emäsalo")  # move to top
+    
+    if station_options[0] != 'Porvoo Emäsalo':
+        if "Porvoo Kilpilahti satama" in station_options:
+            mask = (df['Station'] == "Porvoo Kilpilahti satama") & (df['Parameter'] == selected_parameter)
+            if _has_numeric_value(df.loc[mask, 'Value']):
+                print("Porvoo Kilpilahti satama has numeric value, moving to top of station options")
+                print(df.loc[mask])
+                station_options.remove("Porvoo Kilpilahti satama")
+                station_options.insert(0, "Porvoo Kilpilahti satama")
+
+    if "Vantaa Helsinki-Vantaan lentoasema" in station_options:
+        mask = (df['Station'] == "Vantaa Helsinki-Vantaan lentoasema") & (df['Parameter'] == selected_parameter)
+        if _has_numeric_value(df.loc[mask, 'Value']):
+            print("Vantaa Helsinki-Vantaan lentoasema has numeric value, moving to top of station options")
+            print(df.loc[mask])
+            station_options.remove("Vantaa Helsinki-Vantaan lentoasema")
+            station_options.insert(0, "Vantaa Helsinki-Vantaan lentoasema")
+
+    station_options_with_values = []
+    for station in station_options:
+        mask = (df['Station'] == station) & (df['Parameter'] == selected_parameter)
+        if _has_numeric_value(df.loc[mask, 'Value']):
+            if selected_parameter == "Snow depth":
+                # only include stations with snow depth > 0
+                # convert values robustly to numeric (None/strings -> NaN) and check any > 0
+                vals = pd.to_numeric(df.loc[mask, 'Value'], errors='coerce')
+                if (vals > 0).any():
+                    station_options_with_values.append(station)
+            else:
+                station_options_with_values.append(station)
+
+    selected_stations = st.multiselect("Select Stations to Plot", station_options_with_values, default=station_options_with_values[:5])
     # Filter the DataFrame based on the selected parameter and stations
     df = df[(df['Parameter'] == selected_parameter) & (df['Station'].isin(selected_stations))]
     if df.empty:
