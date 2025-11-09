@@ -11,7 +11,7 @@ import altair as alt
 # import plotly.express as px
 
 # Using https://github.com/pnuu/fmiopendata to download observation data from Finnish Meteorological Institute (FMI)
-
+# just test
 
 hours_to_download = 4 # how many hours of data to download
 do_save_json = False
