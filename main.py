@@ -150,8 +150,9 @@ def _has_numeric_value(series):
     return series.apply(_is_numeric_and_finite).any()
     
 
-
+# Lets print something to console to verify that the app is running
 print("Hello from weatherapp!")
+
 obs = get_data_from_file_or_download()
 
 if do_print_observation_data_to_console:
@@ -161,34 +162,13 @@ if do_print_observation_data_to_console:
 # # MultiPoint.data  # The observation data
 # # MultiPoint.location_metadata  # Location information for the observation locations
 
-# weather_stations = list(sorted(obs.data.keys()))
-# weather_stations_count = len(weather_stations)
-
-# for station in weather_stations:
-#     print("-"*100)
-#     location = obs.location_metadata[station]
-#     fmisd = location['fmisid']
-#     latitude = location['latitude']
-#     longitude = location['longitude']
-#     print(f"{station}, FMISID: {fmisd}, lat: {latitude}, lon: {longitude}")
-
-#     timesteps = obs.data[station]['times']
-#     count_observations = len(timesteps)
-
-#     for parametri in sorted(obs.data[station].keys())[:-1]:  # Exclude the 'times' key at the end
-#         unit = obs.data[station][parametri]['unit']
-#         print(f"  {parametri:30} Observations {count_observations}, latest: {timesteps[-1]}  {obs.data[station][parametri]['values'][-1]} {unit}")
-
-#         if do_print_all_observations:
-#             for idx, ts in enumerate(timesteps):
-#                 value = obs.data[station][parametri]['values'][idx]
-#                 # check that value is not None or NaN. 'is Not None' does not catch NaN values.
-#                 if value is not None and not (isinstance(value, float) and isnan(value)):
-#                     print(f"    {ts}, {value} {unit}")
-
-# print("=" * 100)
-# print(f"Total weather stations: {weather_stations_count}")
-# return
+# ---------------------------------------------------------------------------------------
+# Streamlit part of the app starts here
+#
+# Default Streamlit app opens up in light mode, so we set it to dark mode
+# in .streamlit/config.toml file:
+# [theme]
+# base="dark"
 
 st.set_page_config(layout="wide")
 st.title("Weather Observations")
@@ -197,9 +177,8 @@ st.write("retrieved using Python package https://github.com/pnuu/fmiopendata ")
 st.write("More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data")
 width_main_area_px = 920
 
-# DataFrame for storing the only latest observation datapoint of each weather station
-
-# Build a list of row dicts and construct the DataFrame once (avoid DataFrame.append)
+# DataFrame for storing only latest observation datapoint of each weather station is built here
+# as a list of row dicts and construct the DataFrame once (avoid DataFrame.append)
 rows = []
 for station in obs.data.keys():
     location = obs.location_metadata[station]
@@ -209,7 +188,7 @@ for station in obs.data.keys():
     for parametri in obs.data[station].keys():
         if parametri == 'times':
             continue
-        time_latest = obs.data[station]['times'][-1]  # Latest observation time in data as string
+        time_latest = obs.data[station]['times'][-1]  # Latest observation time
         unit = obs.data[station][parametri]['unit']
         value_latest = obs.data[station][parametri]['values'][-1]  # Latest observation value
         rows.append({
@@ -226,8 +205,6 @@ for station in obs.data.keys():
 df = pd.DataFrame(rows, columns=["Station", "FMISID", "Latitude", "Longitude", "Parameter", "Time", "Value", "Unit"])
 # drop index  
 df.reset_index(drop=True, inplace=True)
-
-
 
 with st.container(width='stretch'):
     st.subheader(f"Observations during the last {hours_to_download} hours: {len(df)}")
@@ -268,6 +245,7 @@ with st.container(width='stretch'):
     st.write(filtered_df)
 
 with st.container(width='stretch'):
+    st.markdown("---")
     # user selects parameter to plot
     st.subheader("Observation of selected Parameter on selected Stations")
     parameter_options = df['Parameter'].unique().tolist()
