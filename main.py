@@ -13,6 +13,7 @@ import altair as alt
 # Using https://github.com/pnuu/fmiopendata to download observation data from Finnish Meteorological Institute (FMI)
 # just test
 
+force_redownload = True  # set to True to force re-download even if pickle file exists
 hours_to_download = 4 # how many hours of data to download
 do_save_json = False
 do_save_pretty_print = False
@@ -64,18 +65,26 @@ def get_data_from_file_or_download():
     # Check if there is a file named 'obs_full.pickle' in the current directory.
     # If so, load the data from there instead of downloading it again.
     try:
+        if force_redownload:
+            raise FileNotFoundError()  # little bit brutal hack to force redownload
         obs = load_pickle_file("obs_full.pickle")
         print("Loaded observation data from obs_full.pickle")
-
+        
+        # Optionally save observation data to other formats
         if do_save_json:
             save_json_file(obs.data, "obs_data.json")
             print("Saved observation data to obs_data.json")
+        
+        # Optionally save observation data as pretty-printed text
         if do_save_pretty_print:
             pretty_print_to_file(obs.data, "obs_data.txt")
             print("Saved observation data to obs_data.txt")
 
     except FileNotFoundError:
-        print("obs_full.pickle not found, downloading data from Finnish Meteorological Institute (FMI)...")
+        if force_redownload:
+            print("force_redownload is True, downloading data from Finnish Meteorological Institute (FMI)...")
+        else:
+            print("obs_full.pickle not found, downloading data from Finnish Meteorological Institute (FMI)...")
 
         end_time = dt.datetime.now(dt.timezone.utc)
         start_time = end_time - dt.timedelta(hours=hours_to_download)
