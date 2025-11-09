@@ -192,9 +192,9 @@ if do_print_observation_data_to_console:
 
 st.set_page_config(layout="wide")
 st.title("Weather Observations")
-st.write(f"Observations from Finnish Meteorological Institute (FMI) weather stations \
-             in the last {hours_to_download} hours retrieved using Python package https://github.com/pnuu/fmiopendata \
-             to handle request to FMI Open Data https://en.ilmatieteenlaitos.fi/open-data")
+st.write("Observations from Finnish Meteorological Institute (FMI) weather stations")
+st.write("retrieved using Python package https://github.com/pnuu/fmiopendata ")
+st.write("More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data")
 width_main_area_px = 920
 
 # DataFrame for storing the only latest observation datapoint of each weather station
