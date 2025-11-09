@@ -192,7 +192,7 @@ if do_print_observation_data_to_console:
 
 st.set_page_config(layout="wide")
 st.title("Weather Observations")
-st.write("Observations from Finnish Meteorological Institute (FMI) weather stations")
+st.write("Observations from Finnish Meteorological Institute (FMI) weather stations.")
 st.write("retrieved using Python package https://github.com/pnuu/fmiopendata ")
 st.write("More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data")
 width_main_area_px = 920
@@ -249,17 +249,20 @@ with st.container(width='stretch'):
     filtered_df = df[df['Parameter'] == selected_parameter]
 
     # ask user to select sorting order by station name or latitude
-    sort_order_options = ["Station Name", "Latitude"]
+    sort_order_options = ["Station Name", "Latitude", "Value Descending", "Value Ascending"]
     selected_sort_order = st.selectbox("Select Sort Order", sort_order_options)
     if selected_sort_order == "Station Name":
         filtered_df = filtered_df.sort_values(by='Station', ascending=True)
-    else:
+    elif selected_sort_order == "Latitude":
         filtered_df = filtered_df.sort_values(by='Latitude', ascending=True)
+    elif selected_sort_order == "Value Descending":
+        filtered_df = filtered_df.sort_values(by='Value', ascending=False)
+    elif selected_sort_order == "Value Ascending":
+        filtered_df = filtered_df.sort_values(by='Value', ascending=True)
 
-    # with st.expander("Show all raw data"):
-    #     st.dataframe(df)
-
-
+    # Optionally show the filtered DataFrame in an expander
+    # with st.expander("Show data"):
+    #     st.dataframe(filtered_df)
 
     # Show the DataFrame in the Streamlit app
     st.write(filtered_df)
