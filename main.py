@@ -149,6 +149,9 @@ def _has_numeric_value(series):
         return not (isinstance(f, float) and isnan(f))
     return series.apply(_is_numeric_and_finite).any()
     
+# ==============================================================================================
+# Main program starts here with data download and processing
+#
 
 # Lets print something to console to verify that the app is running
 print("Hello from weatherapp!")
@@ -158,24 +161,8 @@ obs = get_data_from_file_or_download()
 if do_print_observation_data_to_console:
     print_observation_data_to_console(obs)
 
-# obs = get_data_from_file_or_download()
-# # MultiPoint.data  # The observation data
-# # MultiPoint.location_metadata  # Location information for the observation locations
-
-# ---------------------------------------------------------------------------------------
-# Streamlit part of the app starts here
-#
-# Default Streamlit app opens up in light mode, so we set it to dark mode
-# in .streamlit/config.toml file:
-# [theme]
-# base="dark"
-
-st.set_page_config(layout="wide")
-st.title("Weather Observations")
-st.write("Observations from Finnish Meteorological Institute (FMI) weather stations.")
-st.write("retrieved using Python package https://github.com/pnuu/fmiopendata ")
-st.write("More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data")
-width_main_area_px = 920
+# obs.data  # The observation data
+# obs.location_metadata  # Location information for the observation locations
 
 # DataFrame for storing only latest observation datapoint of each weather station is built here
 # as a list of row dicts and construct the DataFrame once (avoid DataFrame.append)
@@ -205,6 +192,23 @@ for station in obs.data.keys():
 df = pd.DataFrame(rows, columns=["Station", "FMISID", "Latitude", "Longitude", "Parameter", "Time", "Value", "Unit"])
 # drop index  
 df.reset_index(drop=True, inplace=True)
+
+# ==============================================================================================
+# Streamlit part of the app starts here
+#
+# Default Streamlit app opens up in light mode, so we set it to dark mode
+# in .streamlit/config.toml file:
+# [theme]
+# base="dark"
+
+st.set_page_config(layout="wide")
+st.title("Weather Observations")
+st.write("Observations from Finnish Meteorological Institute (FMI) weather stations.")
+st.write("retrieved using Python package https://github.com/pnuu/fmiopendata ")
+st.write("More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data")
+width_main_area_px = 920
+
+
 
 with st.container(width='stretch'):
     st.subheader(f"Observations during the last {hours_to_download} hours: {len(df)}")
