@@ -5,6 +5,7 @@ import pickle
 import json
 import pprint
 import streamlit as st
+from streamlit_extras.stylable_container import stylable_container
 # from streamlit_dimensions import st_dimensions
 import pandas as pd
 import altair as alt
@@ -240,15 +241,23 @@ with st.container(width='stretch'):
 
     latest_observation_time = df['Time'].max()
     st.write("Latest observation time: " + str(latest_observation_time))
-    st.markdown("""
-                <style>
-                    div.stButton > button {
-background-color: #00cc00;color:black;font-size:20px;height:3em;width:30em;border-radius:10px 10px 10px 10px;
-                    }
-                </style>
+#     st.markdown("""
+#                 <style>
+#                     div.stButton > button {
+# background-color: #00cc00;color:black;font-size:20px;height:3em;width:30em;border-radius:10px 10px 10px 10px;
+#                     }
+#                 </style>
 
-                """, unsafe_allow_html=True)
-
+#                 """, unsafe_allow_html=True)
+    with stylable_container(
+    "green",
+    css_styles="""
+    button {
+        background-color: #00FF00;
+        color: black;
+    }""",
+    ):
+        button1_clicked = st.button("Button 1", key="button1")
 
     if st.button("Reload latest data", type="primary", help="Force re-download of data from FMI servers"):
         save_force_redownload_state(True)

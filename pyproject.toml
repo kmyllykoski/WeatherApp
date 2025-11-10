@@ -9,4 +9,5 @@ dependencies = [
     "nicegui>=3.2.0",
     "streamlit>=1.51.0",
     "streamlit-dimensions>=0.0.1",
+    "streamlit-extras>=0.7.8",
 ]
