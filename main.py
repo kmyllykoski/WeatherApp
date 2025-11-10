@@ -6,16 +6,16 @@ import json
 import pprint
 import streamlit as st
 from streamlit_extras.stylable_container import stylable_container
-# from streamlit_dimensions import st_dimensions
 import pandas as pd
 import altair as alt
-# import plotly.express as px
 
-# Using https://github.com/pnuu/fmiopendata to download observation data from Finnish Meteorological Institute (FMI)
-# just test
+# ==============================================================================================
+# Using https://github.com/pnuu/fmiopendata to download observation data from 
+# Finnish Meteorological Institute (FMI)
+# More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data
+# ==============================================================================================
 
-# force_redownload = False  # set to True to force re-download even if pickle file exists
-hours_to_download = 4 # how many hours of data to download
+hours_to_download = 4 # how many hours of data to download. 4 hours takes about 10 seconds to download.
 do_save_json = False
 do_save_pretty_print = False
 do_print_all_observation_times = False
@@ -28,7 +28,8 @@ def save_pickle_file(data, filename):
 def load_pickle_file(filename):
     with open(filename, "rb") as f:
         return pickle.load(f)
-    
+
+# Helper function used in save_json_file to convert complex objects to JSON-serializable types    
 def _convert(obj):
             # Recursively convert objects to JSON-serializable types,
             # converting datetime keys/values to "YYYY-MM-DDTHH:MM:SSZ".
@@ -61,6 +62,8 @@ def pretty_print_to_file(data, filename):
     with open(filename, "w", encoding="utf-8") as f:
         pprint.pprint(data, stream=f, width=120)
 
+# Functions to save and read force_redownload state to/from a file.
+# Possible alternative: https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state
 def save_force_redownload_state(value: bool):
     with open("force_redownload_state.txt", "w") as f:
         f.write("force_redownload=" + str(value))
@@ -78,14 +81,17 @@ def read_force_redownload_state() -> bool:
 def get_data_from_file_or_download():
     # Check if there is a file named 'obs_full.pickle' in the current directory.
     # If so, load the data from there instead of downloading it again.
+
+    # If force_redownload is set to True, we skip loading from file and download again.
     force_redownload = read_force_redownload_state()
+
     try:
         if force_redownload:
             raise FileNotFoundError()  # little bit brutal hack to force redownload
         obs = load_pickle_file("obs_full.pickle")
         print("Loaded observation data from obs_full.pickle")
         
-        # Optionally save observation data to other formats
+        # Optionally save observation data to json (Helpful for developing and debugging)
         if do_save_json:
             save_json_file(obs.data, "obs_data.json")
             print("Saved observation data to obs_data.json")
@@ -163,7 +169,9 @@ def print_observation_data_to_console(obs):
     print(f"Total weather stations: {weather_stations_count}")
     return
 
-# helper: return True only if series contains at least one numeric, finite value
+# Helper function: return True only if series contains at least one numeric, finite value.
+# Used to check that a station has a real numeric value for a parameter to avoid
+# displaying station with no data for that parameter.
 def _has_numeric_value(series):
     def _is_numeric_and_finite(v):
         try:
@@ -190,7 +198,7 @@ if do_print_observation_data_to_console:
 # obs.location_metadata  # Location information for the observation locations
 
 # DataFrame for storing only latest observation datapoint of each weather station is built here
-# as a list of row dicts and construct the DataFrame once (avoid DataFrame.append)
+# as a list of row dicts and then the DataFrame is constructed only once (avoid DataFrame.append).
 rows = []
 for station in obs.data.keys():
     location = obs.location_metadata[station]
@@ -222,14 +230,14 @@ df.reset_index(drop=True, inplace=True)
 # Streamlit part of the app starts here
 #
 # Default Streamlit app opens up in light mode, so we set it to dark mode
-# in .streamlit/config.toml file:
+# in .streamlit/config.toml file containing:
 # [theme]
 # base="dark"
 
 st.set_page_config(layout="wide")
 st.title("Weather Observations")
 st.write("Observations from Finnish Meteorological Institute (FMI) weather stations.")
-st.write("retrieved using Python package https://github.com/pnuu/fmiopendata ")
+st.write("Retrieved using Python package https://github.com/pnuu/fmiopendata ")
 st.write("More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data")
 width_main_area_px = 920  # approximate width of main area in pixels
 
@@ -240,6 +248,7 @@ with st.container(width='stretch'):
     latest_observation_time = df['Time'].max()
     st.write("Latest observation time: " + str(latest_observation_time))
 
+    # Default Streamlit button is red with white text in dark mode. Looks bad, me dont like.
     # https://discuss.streamlit.io/t/issue-with-coloring-buttons-in-streamlit/56914
     with stylable_container(
     "green",
@@ -255,7 +264,6 @@ with st.container(width='stretch'):
         save_force_redownload_state(True)
         get_data_from_file_or_download()
         st.rerun()
-        # st.session_state.clear()
     
     # draw a horizontal line
     st.markdown("---")
@@ -273,7 +281,7 @@ with st.container(width='stretch'):
     # Filter the DataFrame based on the selected parameter
     filtered_df = df[df['Parameter'] == selected_parameter]
 
-    # ask user to select sorting order by station name or latitude
+    # ask user to select sorting order by station name, latitude or value
     sort_order_options = ["Station Name", "Latitude", "Value Descending", "Value Ascending"]
     selected_sort_order = st.selectbox("Select Sort Order", sort_order_options)
     if selected_sort_order == "Station Name":
@@ -285,11 +293,11 @@ with st.container(width='stretch'):
     elif selected_sort_order == "Value Ascending":
         filtered_df = filtered_df.sort_values(by='Value', ascending=True)
 
-    # Optionally show the filtered DataFrame in an expander
+    # Optionally show the filtered DataFrame only after user clicks an expander
     # with st.expander("Show data"):
     #     st.dataframe(filtered_df)
 
-    # Show the DataFrame in the Streamlit app
+    # Show the DataFrame
     st.write(filtered_df)
 
 with st.container(width='stretch'):
