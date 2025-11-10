@@ -13,7 +13,7 @@ import altair as alt
 # Using https://github.com/pnuu/fmiopendata to download observation data from Finnish Meteorological Institute (FMI)
 # just test
 
-force_redownload = True  # set to True to force re-download even if pickle file exists
+force_redownload = False  # set to True to force re-download even if pickle file exists
 hours_to_download = 4 # how many hours of data to download
 do_save_json = False
 do_save_pretty_print = False
@@ -115,6 +115,7 @@ def get_data_from_file_or_download():
             pretty_print_to_file(obs.data, "obs_data.txt")
             print("Saved observation data to obs_data.txt")
 
+    force_redownload = False  # reset flag
     return obs
 
 def print_observation_data_to_console(obs):
@@ -222,6 +223,12 @@ width_main_area_px = 920
 with st.container(width='stretch'):
     st.subheader(f"Observations during the last {hours_to_download} hours: {len(df)}")
     st.subheader("Number of weather stations: " + str(df['Station'].nunique()))
+    
+    if st.button("Reset", type="primary"):
+        st.session_state.clear()
+        force_redownload = True
+        st.experimental_rerun()
+
     # draw a horizontal line
     st.markdown("---")
     st.subheader("Latest observations for selected Parameter for all Stations")
