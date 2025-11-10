@@ -243,15 +243,15 @@ with st.container(width='stretch'):
     st.markdown("""
                 <style>
                     .stButton {
-                        color: white;
-                        background-color: blue;
+                        color: black;
+                       
                     }
                 </style>
 
                 """, unsafe_allow_html=True)
 
 
-    if st.button("Reload latest data", type="secondary", help="Force re-download of data from FMI servers"):
+    if st.button("Reload latest data", type="primary", help="Force re-download of data from FMI servers"):
         save_force_redownload_state(True)
         st.session_state.clear()
     
