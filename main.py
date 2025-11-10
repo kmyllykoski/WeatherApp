@@ -298,7 +298,7 @@ with st.container(width='stretch'):
     #     st.dataframe(filtered_df)
 
     # Show the DataFrame
-    st.write(filtered_df)
+    st.dataframe(filtered_df)
 
 with st.container(width='stretch'):
     st.markdown("---")
