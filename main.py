@@ -240,6 +240,7 @@ with st.container(width='stretch'):
     latest_observation_time = df['Time'].max()
     st.write("Latest observation time: " + str(latest_observation_time))
 
+    # https://discuss.streamlit.io/t/issue-with-coloring-buttons-in-streamlit/56914
     with stylable_container(
     "green",
     css_styles="""
@@ -252,8 +253,8 @@ with st.container(width='stretch'):
 
     if reload_button_clicked:
         save_force_redownload_state(True)
-        df = None  # clear current df
         get_data_from_file_or_download()
+        st.rerun()
         # st.session_state.clear()
     
     # draw a horizontal line
