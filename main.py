@@ -240,7 +240,17 @@ with st.container(width='stretch'):
 
     latest_observation_time = df['Time'].max()
     st.write("Latest observation time: " + str(latest_observation_time))
-    if st.button("Reload latest data", type="secondary"):
+    st.markdown("""
+                <style>
+                    stButton>button {
+                        color: blue;
+                    }
+                </style>
+
+                """, unsafe_allow_html=True)
+
+
+    if st.button("Reload latest data", type="secondary", help="Force re-download of data from FMI servers"):
         save_force_redownload_state(True)
         st.session_state.clear()
     
