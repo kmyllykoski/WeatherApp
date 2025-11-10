@@ -252,7 +252,8 @@ with st.container(width='stretch'):
 
     if reload_button_clicked:
         save_force_redownload_state(True)
-        st.session_state.clear()
+        get_data_from_file_or_download()
+        # st.session_state.clear()
     
     # draw a horizontal line
     st.markdown("---")
