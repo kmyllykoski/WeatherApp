@@ -243,7 +243,8 @@ with st.container(width='stretch'):
     st.markdown("""
                 <style>
                     .stButton {
-                        color: blue;
+                        color: white;
+                        background-color: blue;
                     }
                 </style>
 
