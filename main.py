@@ -29,7 +29,7 @@ def load_pickle_file(filename):
     with open(filename, "rb") as f:
         return pickle.load(f)
 
-# Helper function used in save_json_file to convert complex objects to JSON-serializable types    
+# Helper function used in save_json_file to convert time objects to JSON-serializable types    
 def _convert(obj):
             # Recursively convert objects to JSON-serializable types,
             # converting datetime keys/values to "YYYY-MM-DDTHH:MM:SSZ".
