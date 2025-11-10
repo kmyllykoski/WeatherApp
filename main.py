@@ -237,12 +237,19 @@ width_main_area_px = 920
 with st.container(width='stretch'):
     st.subheader(f"Observations during the last {hours_to_download} hours: {len(df)}")
     st.subheader("Number of weather stations: " + str(df['Station'].nunique()))
-    
-    if st.button("Reset", type="primary"):
-        save_force_redownload_state(True)
-        st.session_state.clear()
-        # st.experimental_rerun()
 
+    latest_observation_time = df['Time'].max()
+    
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Latest observation time: " + str(latest_observation_time))
+
+    with col2:
+        if st.button("Reset", type="primary"):
+            save_force_redownload_state(True)
+            st.session_state.clear()
+    
     # draw a horizontal line
     st.markdown("---")
     st.subheader("Latest observations for selected Parameter for all Stations")
