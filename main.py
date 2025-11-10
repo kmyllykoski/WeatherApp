@@ -311,7 +311,7 @@ with st.container(width='stretch'):
         default_index = parameter_options.index("Air Temperature")
     else:
         default_index = 0
-    selected_parameter = st.selectbox("Select Parameter to Plot", parameter_options, index=default_index)  #  key='parameter_plot'
+    selected_parameter = st.selectbox("Select Parameter to Plot", parameter_options, index=default_index)
     # select multiple stations
     station_options = df['Station'].unique().tolist()
     
@@ -324,14 +324,14 @@ with st.container(width='stretch'):
             station_options.remove("Porvoo Emäsalo")
             station_options.insert(0, "Porvoo Emäsalo")  # move to top
     
-    if station_options[0] != 'Porvoo Emäsalo':
-        if "Porvoo Kilpilahti satama" in station_options:
-            mask = (df['Station'] == "Porvoo Kilpilahti satama") & (df['Parameter'] == selected_parameter)
-            if _has_numeric_value(df.loc[mask, 'Value']):
-                print("Porvoo Kilpilahti satama has numeric value, moving to top of station options")
-                print(df.loc[mask])
-                station_options.remove("Porvoo Kilpilahti satama")
-                station_options.insert(0, "Porvoo Kilpilahti satama")
+    # if Porvoo Emäsalo is not available, try Porvoo Kilpilahti satama
+    elif "Porvoo Kilpilahti satama" in station_options:
+        mask = (df['Station'] == "Porvoo Kilpilahti satama") & (df['Parameter'] == selected_parameter)
+        if _has_numeric_value(df.loc[mask, 'Value']):
+            print("Porvoo Kilpilahti satama has numeric value, moving to top of station options")
+            print(df.loc[mask])
+            station_options.remove("Porvoo Kilpilahti satama")
+            station_options.insert(0, "Porvoo Kilpilahti satama")
 
     if "Vantaa Helsinki-Vantaan lentoasema" in station_options:
         mask = (df['Station'] == "Vantaa Helsinki-Vantaan lentoasema") & (df['Parameter'] == selected_parameter)
@@ -341,12 +341,13 @@ with st.container(width='stretch'):
             station_options.remove("Vantaa Helsinki-Vantaan lentoasema")
             station_options.insert(0, "Vantaa Helsinki-Vantaan lentoasema")
 
+    # only include stations that have a real numeric value for the selected parameter
     station_options_with_values = []
     for station in station_options:
         mask = (df['Station'] == station) & (df['Parameter'] == selected_parameter)
         if _has_numeric_value(df.loc[mask, 'Value']):
             if selected_parameter == "Snow depth":
-                # only include stations with snow depth > 0
+                # only include stations with snow depth > 0 (data can have 0 cm or even negative values)
                 # convert values robustly to numeric (None/strings -> NaN) and check any > 0
                 vals = pd.to_numeric(df.loc[mask, 'Value'], errors='coerce')
                 if (vals > 0).any():
@@ -354,6 +355,7 @@ with st.container(width='stretch'):
             else:
                 station_options_with_values.append(station)
     
+    # Customize multiselect tag color to black text. Orginal is white on red background in dark mode.
     # https://stackoverflow.com/questions/73753323/custom-color-for-each-element-in-multiselect-streamlit
     st.markdown("""
                 <style>
@@ -376,15 +378,17 @@ with st.container(width='stretch'):
     df = df.sort_values(by='Value', ascending=False)
 
 
-##
+# Show data as a bar chart using Altair with two aligned charts: one for labels and one for bars
 with st.container(width='stretch'):
-    # how much is the container width?
+    # how much is the container width? Did not find a way to get it programmatically
+    # so we use a fixed value of width_main_area_px is defined at top of this program.
+    # Labels are given 1/3 of the width and bars 2/3 of the width.
     width_bars = int(width_main_area_px * 0.67)
     width_labels = width_main_area_px - width_bars
 
     sort_order = alt.EncodingSortField(field='Value:Q', op='max', order='descending')
 
-    # 2. Define the main bar chart (67% width)
+    # 2. Define the main bar chart 
     bar_chart = alt.Chart(df).mark_bar().encode(
         # X-axis for the bar values
         x=alt.X('Value:Q', title=f"{selected_parameter} ({df['Unit'].iloc[0]})"),
@@ -401,12 +405,12 @@ with st.container(width='stretch'):
         height=200 # match label chart height
     )
 
-    # 3. Define the Label Chart (33% width)
+    # 3. Define the Label Chart
     label_chart = alt.Chart(df).mark_text(
         align='left', 
         baseline='middle',
         color='white',
-        fontSize=18 # <-- FIXED: fontSize property moved here
+        fontSize=18 
     ).encode(
         # Y-axis for alignment, must use the same sort and must NOT show an axis
         y=alt.Y('Station:N', title=None, sort=sort_order, axis=None), 
@@ -417,8 +421,7 @@ with st.container(width='stretch'):
         # The text itself is the Station name (no fontSize parameter here)
         text=alt.Text('Station:N') 
     ).properties(
-        # Fixed width in pixels for the label column. 180px usually provides enough space
-        # for long names, acting as the '33%' dedicated space.
+        # Fixed width in pixels for the label column. 
         width=width_labels, 
         height=200 # match bar chart height
     )
@@ -428,14 +431,13 @@ with st.container(width='stretch'):
         y='shared' # Crucial: ensures the Y scales and positions are perfectly aligned
     )
     
-
-    # Display the chart in Streamlit (assuming you are running this within a Streamlit app)
+    # Display the chart 
     st.altair_chart(final_chart, width='stretch')
-    # If not running in Streamlit, use .show() for testing:
+    # If not running in Streamlit, use .show():
     # final_chart.show()
 
 with st.container(width='stretch'):
     st.subheader("Selected data")
 
     # Show the DataFrame in the Streamlit app
-    st.write(df)
+    st.dataframe(df)
