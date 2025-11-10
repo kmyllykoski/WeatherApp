@@ -253,15 +253,19 @@ with st.container(width='stretch'):
     "green",
     css_styles="""
     button {
-        background-color: #00FF00;
+        background-color: blue;
         color: black;
     }""",
     ):
-        button1_clicked = st.button("Button 1", key="button1")
+        reload_button_clicked = st.button("Reload latest data", help="Force re-download of data from FMI servers", key="reload_button")
 
-    if st.button("Reload latest data", type="primary", help="Force re-download of data from FMI servers"):
+    if reload_button_clicked:
         save_force_redownload_state(True)
         st.session_state.clear()
+        
+    # if st.button("Reload latest data", type="primary", help="Force re-download of data from FMI servers"):
+    #     save_force_redownload_state(True)
+    #     st.session_state.clear()
     
     # draw a horizontal line
     st.markdown("---")
