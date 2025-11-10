@@ -231,9 +231,7 @@ st.title("Weather Observations")
 st.write("Observations from Finnish Meteorological Institute (FMI) weather stations.")
 st.write("retrieved using Python package https://github.com/pnuu/fmiopendata ")
 st.write("More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data")
-width_main_area_px = 920
-
-
+width_main_area_px = 920  # approximate width of main area in pixels
 
 with st.container(width='stretch'):
     st.subheader(f"Observations during the last {hours_to_download} hours: {len(df)}")
@@ -241,14 +239,7 @@ with st.container(width='stretch'):
 
     latest_observation_time = df['Time'].max()
     st.write("Latest observation time: " + str(latest_observation_time))
-#     st.markdown("""
-#                 <style>
-#                     div.stButton > button {
-# background-color: #00cc00;color:black;font-size:20px;height:3em;width:30em;border-radius:10px 10px 10px 10px;
-#                     }
-#                 </style>
 
-#                 """, unsafe_allow_html=True)
     with stylable_container(
     "green",
     css_styles="""
@@ -262,10 +253,6 @@ with st.container(width='stretch'):
     if reload_button_clicked:
         save_force_redownload_state(True)
         st.session_state.clear()
-
-    # if st.button("Reload latest data", type="primary", help="Force re-download of data from FMI servers"):
-    #     save_force_redownload_state(True)
-    #     st.session_state.clear()
     
     # draw a horizontal line
     st.markdown("---")
