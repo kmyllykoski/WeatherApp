@@ -225,8 +225,9 @@ with st.container(width='stretch'):
     st.subheader("Number of weather stations: " + str(df['Station'].nunique()))
     
     if st.button("Reset", type="primary"):
-        st.session_state.clear()
+        
         force_redownload = True
+        st.session_state.clear()
         # st.experimental_rerun()
 
     # draw a horizontal line
