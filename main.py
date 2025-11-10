@@ -252,6 +252,7 @@ with st.container(width='stretch'):
 
     if reload_button_clicked:
         save_force_redownload_state(True)
+        df = None  # clear current df
         get_data_from_file_or_download()
         # st.session_state.clear()
     
