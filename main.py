@@ -242,7 +242,7 @@ with st.container(width='stretch'):
     st.write("Latest observation time: " + str(latest_observation_time))
     st.markdown("""
                 <style>
-                    .stButton>button {
+                    .stButton {
                         color: blue;
                     }
                 </style>
