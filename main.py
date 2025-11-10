@@ -13,7 +13,7 @@ import altair as alt
 # Using https://github.com/pnuu/fmiopendata to download observation data from Finnish Meteorological Institute (FMI)
 # just test
 
-force_redownload = False  # set to True to force re-download even if pickle file exists
+# force_redownload = False  # set to True to force re-download even if pickle file exists
 hours_to_download = 4 # how many hours of data to download
 do_save_json = False
 do_save_pretty_print = False
@@ -60,10 +60,24 @@ def pretty_print_to_file(data, filename):
     with open(filename, "w", encoding="utf-8") as f:
         pprint.pprint(data, stream=f, width=120)
 
+def save_force_redownload_state(value: bool):
+    with open("force_redownload_state.txt", "w") as f:
+        f.write("force_redownload=" + str(value))
+
+def read_force_redownload_state() -> bool:
+    try:
+        with open("force_redownload_state.txt", "r") as f:
+            line = f.read().strip()
+            if line == "force_redownload=True":
+                return True
+    except FileNotFoundError:
+        pass
+    return False
+
 def get_data_from_file_or_download():
     # Check if there is a file named 'obs_full.pickle' in the current directory.
     # If so, load the data from there instead of downloading it again.
-    global force_redownload
+    force_redownload = read_force_redownload_state()
     try:
         if force_redownload:
             raise FileNotFoundError()  # little bit brutal hack to force redownload
@@ -115,7 +129,7 @@ def get_data_from_file_or_download():
             pretty_print_to_file(obs.data, "obs_data.txt")
             print("Saved observation data to obs_data.txt")
 
-    force_redownload = False  # reset flag
+    save_force_redownload_state(False)  # reset flag
     return obs
 
 def print_observation_data_to_console(obs):
@@ -225,8 +239,7 @@ with st.container(width='stretch'):
     st.subheader("Number of weather stations: " + str(df['Station'].nunique()))
     
     if st.button("Reset", type="primary"):
-        
-        force_redownload = True
+        save_force_redownload_state(True)
         st.session_state.clear()
         # st.experimental_rerun()
 
