@@ -242,9 +242,8 @@ with st.container(width='stretch'):
     st.write("Latest observation time: " + str(latest_observation_time))
     st.markdown("""
                 <style>
-                    .stButton {
-                        color: black;
-                       
+                    div.stButton > button:first-child {
+background-color: #00cc00;color:white;font-size:20px;height:3em;width:30em;border-radius:10px 10px 10px 10px;
                     }
                 </style>
 
