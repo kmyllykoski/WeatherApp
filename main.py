@@ -61,9 +61,9 @@ def pretty_print_to_file(data, filename):
         pprint.pprint(data, stream=f, width=120)
 
 def get_data_from_file_or_download():
-
     # Check if there is a file named 'obs_full.pickle' in the current directory.
     # If so, load the data from there instead of downloading it again.
+    global force_redownload
     try:
         if force_redownload:
             raise FileNotFoundError()  # little bit brutal hack to force redownload
