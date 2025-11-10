@@ -227,7 +227,7 @@ with st.container(width='stretch'):
     if st.button("Reset", type="primary"):
         st.session_state.clear()
         force_redownload = True
-        st.experimental_rerun()
+        # st.experimental_rerun()
 
     # draw a horizontal line
     st.markdown("---")
