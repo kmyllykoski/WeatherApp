@@ -243,7 +243,7 @@ with st.container(width='stretch'):
     st.markdown("""
                 <style>
                     div.stButton > button:first-child {
-background-color: #00cc00;color:white;font-size:20px;height:3em;width:30em;border-radius:10px 10px 10px 10px;
+background-color: #00cc00;color:black;font-size:20px;height:3em;width:30em;border-radius:10px 10px 10px 10px;
                     }
                 </style>
 
