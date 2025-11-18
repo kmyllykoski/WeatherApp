@@ -1,4 +1,4 @@
-#### ==============================================================================================
+#### ========================================================================================
 #### Using https://github.com/pnuu/fmiopendata to download observation data from 
 #### Finnish Meteorological Institute (FMI)
 #### More information about FMI Open Data: https://en.ilmatieteenlaitos.fi/open-data
@@ -9,4 +9,4 @@
 #### 2. Clone this repository
 #### 3. In root directory, create virtual environment: uv sync
 #### 4. Launch Streamlit app: streamlit run main.py
-#### ==============================================================================================
+#### ========================================================================================
