@@ -388,7 +388,7 @@ with st.container(width='stretch'):
 # Show data as a bar chart using Altair with two aligned charts: one for labels and one for bars
 with st.container(width='stretch'):
     # how much is the container width? Did not find a way to get it programmatically
-    # so we use a fixed value of width_main_area_px is defined at top of this program.
+    # so we use a fixed value of width_main_area_px and it is defined at top of this program.
     # Labels are given 1/3 of the width and bars 2/3 of the width.
     width_bars = int(width_main_area_px * 0.67)
     width_labels = width_main_area_px - width_bars
